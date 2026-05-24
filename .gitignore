@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project-specific ignores
+# Local SQLite database
+db/database.db
+
+# Editor and local env
+.vscode/
+.env.local
