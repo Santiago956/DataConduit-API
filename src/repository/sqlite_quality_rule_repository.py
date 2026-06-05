@@ -32,4 +32,100 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
             db_session.add(rule)
             db_session.commit()
             db_session.refresh(rule)
+            
+            return rule
+        
+    def read(self,
+             rule_id: int) -> QualityRuleModel | None:
+        
+        with self.sqlite_client()._get_session() as db_session:
+            rule = (
+                db_session.query(QualityRuleModel)
+                .filter(QualityRuleModel.id == rule_id)
+                .first()
+            )
+            
+            return rule
+        
+    def read_by_target_table(self,
+                             target_table: str,
+                             is_active: bool | None = True) -> list[QualityRuleModel]:
+        
+        with self.sqlite_cliente()._get_session() as db_session:
+            query = db_session.query(QualityRuleModel)
+            if is_active is not None:
+                query = query.filter(QualityRuleModel.target_table == target_table,
+                                     QualityRuleModel.is_active == is_active)
+            else:
+                query = query.filter(QualityRuleModel.target_table == target_table).all()
+            
+            return query.all()
+
+    def update(self,
+               rule_id: int,
+               new_rule_data: dict) -> QualityRuleModel:
+        
+        with self.sqlite_cliente()._get_session() as db_session:
+            query = (
+                    db_session
+                    .query(QualityRuleModel)
+                    .filter(QualityRuleModel.id == rule_id)
+                )
+            
+            rule = query.first()
+            
+            if rule is None:
+                raise ValueError(f"Quality rule with ID {rule_id} not found.")
+            
+            if not rule.is_active:
+                raise Exception(f"Cannot update an inactive quality rule with ID {rule_id}.")
+
+            query.update(
+                {key: value for key, value in new_rule_data.items() if value is not None and key != "is_active"}
+            )
+            db_session.commit()
+            rule = query.first()
+            
+            return rule
+            
+    def delete(self,
+               rule_id: int) -> QualityRuleModel:
+        
+        with self.sqlite_cliente()._get_session() as db_session:
+            query = (
+                db_session.query(QualityRuleModel)
+                .filter(QualityRuleModel.id == rule_id)
+            )
+            rule = query.first()
+            
+            if rule is None:
+                raise Exception(f"Quality rule with ID {rule_id} not found.")
+            if not rule.is_active:
+                raise Exception(f"Quality rule with ID {rule_id} is not active and cannot be deleted.")
+            
+            rule.update({"is_active": False})
+            db_session.commit()
+            rule = query.first()
+            
+            return rule
+            
+    def revert_delete(self,
+               rule_id: int) -> QualityRuleModel:
+        
+        with self.sqlite_cliente()._get_session() as db_session:
+            query = (
+                db_session.query(QualityRuleModel)
+                .filter(QualityRuleModel.id == rule_id)
+            )
+            rule = query.first()
+            
+            if rule is None:
+                raise Exception(f"Quality rule with ID {rule_id} not found.")
+            if rule.is_active:
+                raise Exception(f"Quality rule with ID {rule_id} is already active and cannot be reverted.")
+            
+            query.update({"is_active": True})
+            db_session.commit()
+            rule = query.first()
+            
             return rule

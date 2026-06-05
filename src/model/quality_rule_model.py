@@ -5,7 +5,7 @@ from src.gateway.sqlite_client import SQLiteBase
 
 class QualityRuleModel(SQLiteBase):
     __tablename__ = "quality_rule"
-    __tableargs__ = (
+    __table_args__ = (
         PrimaryKeyConstraint("id", name="pk_quality_rule"),
         UniqueConstraint("rule_type", "target_table", "target_column", name="unique_rule"),
     )
@@ -20,7 +20,7 @@ class QualityRuleModel(SQLiteBase):
     regex_expr = Column(String)
     is_active = Column(Boolean, nullable=False)
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"""<QualityRuleModel(
             id={self.id}, 
             rule_type='{self.rule_type}',
