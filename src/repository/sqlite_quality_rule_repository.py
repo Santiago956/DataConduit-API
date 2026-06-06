@@ -1,6 +1,7 @@
 from src.repository.interface.interface_quality_rule_repository import IQualityRuleRepository
 from src.model.quality_rule_model import QualityRuleModel
 from src.gateway.sqlite_client import SQLiteClient
+from src.exceptions.repo_exceptions import RevertDeleteIsActive, NotActive, UpdateIsNotActive
 
 
 class SQLiteQualityRuleRepository(IQualityRuleRepository):
@@ -51,7 +52,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
                              target_table: str,
                              is_active: bool | None = True) -> list[QualityRuleModel]:
         
-        with self.sqlite_cliente()._get_session() as db_session:
+        with self.sqlite_client()._get_session() as db_session:
             query = db_session.query(QualityRuleModel)
             if is_active is not None:
                 query = query.filter(QualityRuleModel.target_table == target_table,
@@ -65,7 +66,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
                rule_id: int,
                new_rule_data: dict) -> QualityRuleModel:
         
-        with self.sqlite_cliente()._get_session() as db_session:
+        with self.sqlite_client()._get_session() as db_session:
             query = (
                     db_session
                     .query(QualityRuleModel)
@@ -78,7 +79,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
                 raise ValueError(f"Quality rule with ID {rule_id} not found.")
             
             if not rule.is_active:
-                raise Exception(f"Cannot update an inactive quality rule with ID {rule_id}.")
+                raise UpdateIsNotActive(f"Cannot update an inactive quality rule with ID {rule_id}.")
 
             query.update(
                 {key: value for key, value in new_rule_data.items() if value is not None and key != "is_active"}
@@ -91,7 +92,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
     def delete(self,
                rule_id: int) -> QualityRuleModel:
         
-        with self.sqlite_cliente()._get_session() as db_session:
+        with self.sqlite_client()._get_session() as db_session:
             query = (
                 db_session.query(QualityRuleModel)
                 .filter(QualityRuleModel.id == rule_id)
@@ -101,7 +102,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
             if rule is None:
                 raise Exception(f"Quality rule with ID {rule_id} not found.")
             if not rule.is_active:
-                raise Exception(f"Quality rule with ID {rule_id} is not active and cannot be deleted.")
+                raise NotActive(f"Quality rule with ID {rule_id} is not active and cannot be deleted.")
             
             rule.update({"is_active": False})
             db_session.commit()
@@ -112,7 +113,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
     def revert_delete(self,
                rule_id: int) -> QualityRuleModel:
         
-        with self.sqlite_cliente()._get_session() as db_session:
+        with self.sqlite_client()._get_session() as db_session:
             query = (
                 db_session.query(QualityRuleModel)
                 .filter(QualityRuleModel.id == rule_id)
@@ -122,7 +123,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
             if rule is None:
                 raise Exception(f"Quality rule with ID {rule_id} not found.")
             if rule.is_active:
-                raise Exception(f"Quality rule with ID {rule_id} is already active and cannot be reverted.")
+                raise RevertDeleteIsActive(f"Quality rule with ID {rule_id} is already active and cannot be reverted.")
             
             query.update({"is_active": True})
             db_session.commit()
