@@ -19,7 +19,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
                enum_value: list[str] | None = None,
                regex_pattern: str | None = None) -> QualityRuleModel:
         
-        with self.sqlite_client()._get_session() as db_session:
+        with self.sqlite_client._get_session() as db_session:
             rule = QualityRuleModel(
                 rule_type=rule_type,
                 target_table=target_table,
@@ -39,7 +39,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
     def read(self,
              rule_id: int) -> QualityRuleModel | None:
         
-        with self.sqlite_client()._get_session() as db_session:
+        with self.sqlite_client._get_session() as db_session:
             rule = (
                 db_session.query(QualityRuleModel)
                 .filter(QualityRuleModel.id == rule_id)
@@ -52,7 +52,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
                              target_table: str,
                              is_active: bool | None = True) -> list[QualityRuleModel]:
         
-        with self.sqlite_client()._get_session() as db_session:
+        with self.sqlite_client._get_session() as db_session:
             query = db_session.query(QualityRuleModel)
             if is_active is not None:
                 query = query.filter(QualityRuleModel.target_table == target_table,
@@ -66,7 +66,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
                rule_id: int,
                new_rule_data: dict) -> QualityRuleModel:
         
-        with self.sqlite_client()._get_session() as db_session:
+        with self.sqlite_client._get_session() as db_session:
             query = (
                     db_session
                     .query(QualityRuleModel)
@@ -92,7 +92,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
     def delete(self,
                rule_id: int) -> QualityRuleModel:
         
-        with self.sqlite_client()._get_session() as db_session:
+        with self.sqlite_client._get_session() as db_session:
             query = (
                 db_session.query(QualityRuleModel)
                 .filter(QualityRuleModel.id == rule_id)
@@ -113,7 +113,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
     def revert_delete(self,
                rule_id: int) -> QualityRuleModel:
         
-        with self.sqlite_client()._get_session() as db_session:
+        with self.sqlite_client._get_session() as db_session:
             query = (
                 db_session.query(QualityRuleModel)
                 .filter(QualityRuleModel.id == rule_id)
