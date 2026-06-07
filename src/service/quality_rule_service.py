@@ -18,7 +18,7 @@ class QualityRuleService(IQualityRuleService):
                     min_value: float | None = None,
                     max_value: float | None = None,
                     enum_value: list[str] | None = None,
-                    regex_pattern: str | None = None) -> QualityRuleModel:
+                    regex_expr: str | None = None) -> QualityRuleModel:
         
         try:
             # Tabela tem que existir
@@ -31,7 +31,7 @@ class QualityRuleService(IQualityRuleService):
                 min_value=min_value,
                 max_value=max_value,
                 enum_value=enum_value,
-                regex_pattern=regex_pattern
+                regex_expr=regex_expr
                 )
         except IntegrityError as error:
             raise QualityRuleExists(f"Rule with type '{rule_type}' for column '{target_column}' in table '{target_table}' already exists.") from error

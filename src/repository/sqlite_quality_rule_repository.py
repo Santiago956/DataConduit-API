@@ -17,7 +17,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
                min_value: float | None = None,
                max_value: float | None = None,
                enum_value: list[str] | None = None,
-               regex_pattern: str | None = None) -> QualityRuleModel:
+               regex_expr: str | None = None) -> QualityRuleModel:
         
         with self.sqlite_client._get_session() as db_session:
             rule = QualityRuleModel(
@@ -27,7 +27,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
                 min_value=min_value,
                 max_value=max_value,
                 enum_value=enum_value,
-                regex_pattern=regex_pattern,
+                regex_expr=regex_expr,
                 is_active = True
             )
             db_session.add(rule)

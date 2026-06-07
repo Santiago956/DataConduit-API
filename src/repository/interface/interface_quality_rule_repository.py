@@ -14,7 +14,7 @@ class IQualityRuleRepository(ABC):
                min_value: float | None = None,
                max_value: float | None = None,
                enum_value: list[str] | None = None,
-               regex_pattern: str | None = None) -> QualityRuleModel:
+               regex_expr: str | None = None) -> QualityRuleModel:
         """
         Create a new quality rule with the specified parameters.
         """
