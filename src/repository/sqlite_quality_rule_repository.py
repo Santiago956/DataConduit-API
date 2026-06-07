@@ -81,7 +81,7 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
                 raise UpdateIsNotActive(f"Cannot update an inactive quality rule with ID {rule_id}.")
 
             query.update(
-                {key: value for key, value in new_rule_data.items() if value is not None and key != "is_active"}
+                {key: value for key, value in new_rule_data.items() if key != "is_active"}
             )
             db_session.commit()
             rule = query.first()

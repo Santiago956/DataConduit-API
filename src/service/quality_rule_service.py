@@ -1,6 +1,4 @@
 from sqlalchemy.exc import IntegrityError
-from fastapi.encoders import jsonable_encoder
-from pydantic import ValidationError
 
 from src.service.interface.interface_quality_rule_service import IQualityRuleService
 from src.repository.interface.interface_quality_rule_repository import IQualityRuleRepository
@@ -12,7 +10,7 @@ from src.exceptions.quality_rule_exceptions import (
     QualityRuleIsActive
     )
 from src.exceptions.repo_exceptions import UpdateIsNotActive, RevertDeleteIsActive
-from src.schema.quality_rule_schema import QualityRuleSchema
+
 
 
 
@@ -69,22 +67,18 @@ class QualityRuleService(IQualityRuleService):
         return rules
     
     def update_rule(self, rule_id: int, new_rule_data: dict) -> QualityRuleModel:
-        try:
+        try:       
             rule = self.quality_rule_repo.read(rule_id=rule_id)
             
-            rule_dict = jsonable_encoder(rule)
-            rule_dict.update({key: value for key, value in new_rule_data.items() if value is not None and key in ["target_table", "target_column", "rule_type"] and value is not None})
-            QualityRuleSchema.model_validate(rule_dict)
-
+            if not rule:
+                raise QualityRuleNotFound(f"Rule {rule_id} not found.")
+            
             rule = self.quality_rule_repo.update(rule_id=rule_id,
                                                 new_rule_data=new_rule_data)
-            
             return rule
-
+        
         except IntegrityError as error:
             raise QualityRuleExists(f"Rule with the same type and target column already exists.") from error
-        except ValidationError as error:
-            raise QualityRuleExists(f"Invalid rule data provided.") from error
         except UpdateIsNotActive:
             raise QualityRuleIsDeactivated(f"Cannot update rule {rule_id} because it is deactivated.")
         except Exception as error:

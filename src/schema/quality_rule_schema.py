@@ -71,12 +71,7 @@ class QualityRuleSchema(BaseModel):
                 self._check_simple_rule(self)
         return self
                 
-
-class QualityRuleUpdateSchema(QualityRuleSchema):
-    rule_type: Optional[RuleTypeEnum] = None
-    target_table: Optional[str] = None
-    target_column: Optional[str] = None                
-                
+        
 
 if __name__ == "__main__":
     QualityRuleSchema(
