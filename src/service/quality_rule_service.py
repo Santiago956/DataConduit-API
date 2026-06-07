@@ -68,6 +68,8 @@ class QualityRuleService(IQualityRuleService):
 
             return rule
 
+        except IntegrityError as error:
+            raise QualityRuleExists(f"Rule with the same type and target column already exists.") from error
         except UpdateIsNotActive:
             raise QualityRuleIsDeactivated(f"Cannot update rule {rule_id} because it is deactivated.")
         except Exception as error:
