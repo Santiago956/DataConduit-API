@@ -9,7 +9,7 @@ from src.exceptions.quality_rule_exceptions import (
     QualityRuleIsDeactivated,
     QualityRuleIsActive
     )
-from src.exceptions.repo_exceptions import UpdateIsNotActive, RevertDeleteIsActive
+from src.exceptions.repo_exceptions import UpdateIsNotActive, RevertDeleteIsActive, DeleteIsNotActive
 
 
 
@@ -86,21 +86,31 @@ class QualityRuleService(IQualityRuleService):
 
     def deactivate_by_id(self, rule_id: int) -> QualityRuleModel:
         try:
-            rule = self.quality_rule_repo.deactivate(rule_id=rule_id)
+            rule = self.quality_rule_repo.read(rule_id=rule_id)
             if not rule:
                 raise QualityRuleNotFound(f"Rule {rule_id} not found.")
 
+            rule = self.quality_rule_repo.delete(rule_id=rule_id)
+        
             return rule
-        except QualityRuleIsDeactivated:
+        
+        except DeleteIsNotActive:
             raise QualityRuleIsDeactivated(f"Rule {rule_id} is already deactivated.")
+        except Exception as error:
+            raise error
     
     def activate_by_id(self, rule_id: int) -> QualityRuleModel:
         try:
-            rule = self.quality_rule_repo.activate(rule_id=rule_id)
+            rule = self.quality_rule_repo.read(rule_id=rule_id)
             if not rule:
                 raise QualityRuleNotFound(f"Rule {rule_id} not found.")
+            
+            rule = self.quality_rule_repo.revert_delete(rule_id=rule_id)
             
             return rule
         
         except RevertDeleteIsActive:
             raise QualityRuleIsActive(f"Rule {rule_id} is already active and cannot be reactivated.")
+        
+        except Exception as error:
+            raise error

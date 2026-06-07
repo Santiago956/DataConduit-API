@@ -10,7 +10,7 @@ from src.exceptions.quality_rule_exceptions import (
     QualityRuleIsDeactivated,
     QualityRuleIsActive
 )
-from src.schema.quality_rule_schema import QualityRuleSchema
+from src.schema.quality_rule_schema import QualityRuleSchema, SoftDeleteLogicModel
 from src.schema.responses_schema import QualityRuleObjectResponse
 
 
@@ -74,6 +74,35 @@ class QualityController:
             )
             
         except QualityRuleExists as e:
+            
+            return JSONResponse(
+                status_code= status.HTTP_409_CONFLICT,
+                content={"message": str(e)}
+            )
+    
+    @router.patch("/rule/{rule_id}")
+    async def activate_or_deactivate_rule(rule_id: int, soft_delete_logic: SoftDeleteLogicModel, quality_rule_service: IQualityRuleService = Depends(get_quality_rule_service)):
+        try:
+            if soft_delete_logic.is_active:
+                return quality_rule_service.activate_by_id(rule_id=rule_id)
+            else:
+                return quality_rule_service.deactivate_by_id(rule_id=rule_id)
+        
+        except QualityRuleNotFound as e:
+            
+            return JSONResponse(
+                status_code= status.HTTP_404_NOT_FOUND,
+                content={"message": str(e)}
+            )
+        
+        except QualityRuleIsDeactivated as e:
+            
+            return JSONResponse(
+                status_code= status.HTTP_409_CONFLICT,
+                content={"message": str(e)}
+            )
+            
+        except QualityRuleIsActive as e:
             
             return JSONResponse(
                 status_code= status.HTTP_409_CONFLICT,

@@ -1,7 +1,7 @@
 from src.repository.interface.interface_quality_rule_repository import IQualityRuleRepository
 from src.model.quality_rule_model import QualityRuleModel
 from src.gateway.sqlite_client import SQLiteClient
-from src.exceptions.repo_exceptions import RevertDeleteIsActive, NotActive, UpdateIsNotActive
+from src.exceptions.repo_exceptions import RevertDeleteIsActive, DeleteIsNotActive, UpdateIsNotActive
 
 class SQLiteQualityRuleRepository(IQualityRuleRepository):
     def __init__(self):
@@ -101,9 +101,9 @@ class SQLiteQualityRuleRepository(IQualityRuleRepository):
             if rule is None:
                 raise Exception(f"Quality rule with ID {rule_id} not found.")
             if not rule.is_active:
-                raise NotActive(f"Quality rule with ID {rule_id} is not active and cannot be deleted.")
+                raise DeleteIsNotActive(f"Quality rule with ID {rule_id} is not active and cannot be deleted.")
             
-            rule.update({"is_active": False})
+            query.update({"is_active": False})
             db_session.commit()
             rule = query.first()
             

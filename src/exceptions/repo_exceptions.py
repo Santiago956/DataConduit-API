@@ -2,8 +2,8 @@ class RepoError(Exception):
     """Base class for repository-related exceptions."""
     pass
 
-class NotActive(RepoError):
-    """Exception raised when a rule is not active."""
+class DeleteIsNotActive(RepoError):
+    """Exception raised when attempting to delete a rule that is not active."""
     pass
 
 class RevertDeleteIsActive(RepoError):

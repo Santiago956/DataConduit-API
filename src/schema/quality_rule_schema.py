@@ -71,7 +71,8 @@ class QualityRuleSchema(BaseModel):
                 self._check_simple_rule(self)
         return self
                 
-        
+class SoftDeleteLogicModel(BaseModel):
+    is_active: bool
 
 if __name__ == "__main__":
     QualityRuleSchema(
