@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 
 from src.service.quality_rule_service import IQualityRuleService
 from src.service.quality_rule_service import QualityRuleService
@@ -57,8 +58,15 @@ class QualityController:
     @router.put("/rule/{rule_id}")
     async def update_quality_rule(rule_id: int, new_rule_data: QualityRuleUpdateSchema, quality_rule_service: IQualityRuleService = Depends(get_quality_rule_service)):
         try:
-            response = quality_rule_service.update_rule(rule_id=rule_id, rule_data=new_rule_data.model_dump())
+            response = quality_rule_service.update_rule(rule_id=rule_id, new_rule_data=new_rule_data.model_dump())
             return response
+        
+        except ValidationError as e:
+            
+            return JSONResponse(
+                status_code= status.HTTP_422_UNPROCESSABLE_ENTITY,
+                content={"message": "Invalid data provided.", "details": e.errors()}
+            )
         
         except QualityRuleNotFound as e:
             

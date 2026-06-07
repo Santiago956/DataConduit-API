@@ -3,7 +3,6 @@ from src.model.quality_rule_model import QualityRuleModel
 from src.gateway.sqlite_client import SQLiteClient
 from src.exceptions.repo_exceptions import RevertDeleteIsActive, NotActive, UpdateIsNotActive
 
-
 class SQLiteQualityRuleRepository(IQualityRuleRepository):
     def __init__(self):
         self.sqlite_client = SQLiteClient()
