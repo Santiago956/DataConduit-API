@@ -1,8 +1,8 @@
-Funcionalidade: Permitir criação da regra de qualidade para uma determinada tabela e coluna desta tabela
+Feature: Allow creation of a quality rule for a specific table and column
 
-    Cenário: Solicitada uma criação de uma regra de qualidade com todos os atributos fornecidos: tipo de regra, nome da tabela, coluna e parâmetros dependendo da regra
-        Dado a criação de uma nova regra de unicidade com todos os atributos: tipo de regra (unicidade), tabela e coluna
-        Quando o método de criação for utilizado passando esses atributos
-        Então verifica a existência da tabela
-        E se a regra em questão já existe
-        E criar a regra de qualidade
+  Scenario: Request to create a quality rule with all attributes provided: rule type, table name, column, and rule-specific parameters
+    Given the creation of a new uniqueness rule with all attributes: rule type (uniqueness), table and column
+    When the create method is called passing these attributes
+    Then it checks for the existence of the table
+    And whether the rule in question already exists
+    And creates the quality rule
