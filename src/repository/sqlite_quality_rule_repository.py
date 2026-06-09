@@ -4,8 +4,8 @@ from src.gateway.sqlite_client import SQLiteClient
 from src.exceptions.repo_exceptions import RevertDeleteIsActive, DeleteIsNotActive, UpdateIsNotActive
 
 class SQLiteQualityRuleRepository(IQualityRuleRepository):
-    def __init__(self):
-        self.sqlite_client = SQLiteClient()
+    def __init__(self, sqlite_client: SQLiteClient):
+        self.sqlite_client = sqlite_client
     """
     SQLite implementation of the IQualityRuleRepository interface, providing CRUD operations for quality rules using SQLite as the database.
     """

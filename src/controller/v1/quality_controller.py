@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
+from dependency_injector.wiring import inject, Provide
 
 from src.service.quality_rule_service import IQualityRuleService
 from src.service.quality_rule_service import QualityRuleService
@@ -12,11 +13,9 @@ from src.exceptions.quality_rule_exceptions import (
 )
 from src.schema.quality_rule_schema import QualityRuleSchema, SoftDeleteLogicModel
 from src.schema.responses_schema import QualityRuleObjectResponse
+from src.config.containers import ApplicationContainer
 
 
-def get_quality_rule_service():
-    
-    return QualityRuleService(SQLiteQualityRuleRepository())
 
 
 class QualityController:
@@ -24,7 +23,8 @@ class QualityController:
     router = APIRouter()
     
     @router.post("/rule", status_code=201, response_model=QualityRuleObjectResponse)
-    async def create_quality_rule(rule: QualityRuleSchema, quality_rule_service: IQualityRuleService = Depends(get_quality_rule_service)):
+    @inject
+    async def create_quality_rule(rule: QualityRuleSchema, quality_rule_service: IQualityRuleService = Depends(Provide[ApplicationContainer.services.quality_rule_service])):
         try:
             response = quality_rule_service.create_rule(**rule.dict())
             return response
@@ -37,7 +37,8 @@ class QualityController:
             )
 
     @router.get("/rule/{rule_id}")
-    async def get_quality_rule(rule_id: int, quality_rule_service: IQualityRuleService = Depends(get_quality_rule_service)):
+    @inject
+    async def get_quality_rule(rule_id: int, quality_rule_service: IQualityRuleService = Depends(Provide[ApplicationContainer.services.quality_rule_service])):
         try:
             response = quality_rule_service.read_rule_by_id(rule_id=rule_id)
             return response
@@ -50,12 +51,14 @@ class QualityController:
             )
             
     @router.get("/rule/table/{target_table}")
-    async def get_quality_rules_by_table(target_table: str, is_active: bool | None = True, quality_rule_service: IQualityRuleService = Depends(get_quality_rule_service)):
+    @inject
+    async def get_quality_rules_by_table(target_table: str, is_active: bool | None = True, quality_rule_service: IQualityRuleService = Depends(Provide[ApplicationContainer.services.quality_rule_service])):
         
         return quality_rule_service.read_rules_by_target_table(target_table=target_table, is_active=is_active)
 
     @router.put("/rule/{rule_id}")
-    async def update_quality_rule(rule_id: int, new_rule_data: QualityRuleSchema, quality_rule_service: IQualityRuleService = Depends(get_quality_rule_service)):
+    @inject
+    async def update_quality_rule(rule_id: int, new_rule_data: QualityRuleSchema, quality_rule_service: IQualityRuleService = Depends(Provide[ApplicationContainer.services.quality_rule_service])):
         try:
             return quality_rule_service.update_rule(rule_id=rule_id, new_rule_data=new_rule_data.model_dump())
         
@@ -81,7 +84,8 @@ class QualityController:
             )
     
     @router.patch("/rule/{rule_id}")
-    async def activate_or_deactivate_rule(rule_id: int, soft_delete_logic: SoftDeleteLogicModel, quality_rule_service: IQualityRuleService = Depends(get_quality_rule_service)):
+    @inject
+    async def activate_or_deactivate_rule(rule_id: int, soft_delete_logic: SoftDeleteLogicModel, quality_rule_service: IQualityRuleService = Depends(Provide[ApplicationContainer.services.quality_rule_service])):
         try:
             if soft_delete_logic.is_active:
                 return quality_rule_service.activate_by_id(rule_id=rule_id)

@@ -1,132 +1,188 @@
 # DataConduit-API
 
-Lightweight FastAPI service to manage data quality rules for tables and columns.
+DataConduit-API is a lightweight, modular FastAPI service designed to manage data quality rules for tables and columns. It implements a clean architecture with a clear separation of concerns, making it highly maintainable and extensible.
 
-## **Overview**
+## 🚀 Overview
 
-DataConduit-API is a small, modular web service that lets you create, read, update and (soft) delete quality rules that apply to a target table and column. It uses FastAPI for HTTP endpoints, SQLAlchemy as the ORM, and SQLite as a local storage engine by default.
+The service allows users to define, manage, and query quality rules (such as uniqueness, range, regex, and enum) that are applied to specific target tables and columns. It leverages modern Python tools to ensure a robust and developer-friendly experience.
 
-The codebase is intentionally simple and structured to demonstrate clean separation of concerns: controllers, services, repositories, models and schemas.
+### Key Features:
+- **CRUD Operations**: Full support for creating, reading, updating, and (soft) deleting quality rules.
+- **Rule Types**:
+    - `unicity`: Ensures data uniqueness in a column.
+    - `precision`: Validates numeric ranges (`min_value`/`max_value`) or allowed sets of values (`enum_value`).
+    - `validity`: Validates data against a specific regular expression (`regex_expr`).
+    - `completeness`: Checks for the presence of data.
+- **Soft Delete**: Rules can be deactivated and reactivated without being permanently removed from the database.
+- **Dependency Injection**: Fully decoupled components using the `dependency-injector` library.
+- **Data Validation**: Strict request/response validation using Pydantic schemas, including cross-field validation for rule parameters.
 
-## **Architecture**
+## 🏗️ Architecture
 
-- **Controllers**: HTTP layer (FastAPI routers) that parse requests and map domain exceptions to HTTP responses. See `src/controller/` and `src/controller/v1/quality_controller.py`.
-- **Services**: Business rules and orchestration. See `src/service/quality_rule_service.py`.
-- **Repositories**: Data access layer (SQLAlchemy-based implementations). See `src/repository/` and `src/repository/sqlite_quality_rule_repository.py`.
-- **Gateway**: Database client and base declarative class. See `src/gateway/sqlite_client.py`.
-- **Models & Schemas**: Domain models (SQLAlchemy) and validation/serialization (Pydantic). See `src/model/` and `src/schema/`.
+The project follows a layered architecture inspired by Clean Architecture principles:
 
-Mermaid overview:
+1.  **Controllers (API Layer)**: FastAPI routers that handle HTTP requests, validate input using Pydantic, and map domain exceptions to appropriate HTTP responses.
+2.  **Services (Business Logic)**: Orchestrate business rules and interact with repositories. This layer is independent of the framework and database.
+3.  **Repositories (Data Access)**: Handle persistence logic using SQLAlchemy. Interfaces are used to decouple the service layer from specific database implementations.
+4.  **Gateway (Infrastructure)**: Provides the database client and base configuration.
+5.  **Models & Schemas**: 
+    - **Models**: SQLAlchemy declarative models for database persistence.
+    - **Schemas**: Pydantic models for data validation, serialization, and API documentation.
+
+### Dependency Injection Diagram
 
 ```mermaid
-flowchart LR
-  Client -->|HTTP| API[FastAPI]
-  API --> Controllers
-  Controllers --> Services
-  Services --> Repositories
-  Repositories --> DB[(SQLite / SQLAlchemy)]
-
-  subgraph App
-    Controllers
-    Services
-    Repositories
-  end
+flowchart TD
+    App[FastAPI App] --> AC[ApplicationContainer]
+    AC --> SC[ServiceContainer]
+    SC --> RC[RepositoryContainer]
+    RC --> GC[GatewayContainer]
+    
+    subgraph Services
+        SC --> QRS[QualityRuleService]
+    end
+    
+    subgraph Repositories
+        RC --> SRR[SQLiteQualityRuleRepository]
+    end
+    
+    subgraph Gateway
+        GC --> SCli[SQLiteClient]
+    end
 ```
 
-## **Technologies**
+## 🛠️ Technologies
 
-- **FastAPI** — HTTP API framework
-- **Uvicorn** — ASGI server for running the app
-- **SQLAlchemy** — ORM and schema definitions
-- **Pydantic** — request/response validation and serialization
-- **SQLite** — default local database (in `db/`)
+- **Python 3.14+**
+- **FastAPI**: Modern, fast web framework for building APIs.
+- **SQLAlchemy 2.0**: Powerful SQL toolkit and Object Relational Mapper.
+- **Dependency-Injector**: Professional dependency injection framework.
+- **Pydantic**: Data validation and settings management.
+- **SQLite**: Default lightweight database engine.
+- **Uvicorn**: Lightning-fast ASGI server implementation.
 
-See `requirements.txt` for installable dependencies.
+## 📦 Installation & Setup
 
-## **Data model: Quality Rule**
+### 1. Clone the repository
+```bash
+git clone https://github.com/your-repo/DataConduit-API.git
+cd DataConduit-API
+```
 
-The main persistence model is `QualityRuleModel`. Key fields:
+### 2. Create and activate a virtual environment
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
 
-- **id** (Integer, PK)
-- **rule_type** (String) — rule kind, e.g. `uniqueness`, `range`, `regex`, `enum`
-- **target_table** (String) — table name the rule applies to
-- **target_column** (String) — column in the table
-- **min_value / max_value** (Float) — numeric bounds for range rules
-- **enum_value** (JSON) — array of allowed values for enum rules (e.g. `["A","B"]`)
-- **regex_expr** (String) — expression for regex rules
-- **is_active** (Boolean) — soft-delete / activation flag
-
-Model definition: [src/model/quality_rule_model.py](src/model/quality_rule_model.py)
-
-## **API examples**
-
-Start the app locally:
-
+### 3. Install dependencies
 ```bash
 pip install -r requirements.txt
-uvicorn src.app:app --reload
 ```
 
-Create a rule (example `uniqueness`):
-
-```bash
-curl -X POST http://127.0.0.1:8000/rule \
-  -H "Content-Type: application/json" \
-  -d '{"rule_type":"uniqueness","target_table":"users","target_column":"email","is_active":true}'
-```
-
-Get rule by id:
-
-```bash
-curl http://127.0.0.1:8000/rule/1
-```
-
-List rules for a table (active only):
-
-```bash
-curl "http://127.0.0.1:8000/rule/table/users?is_active=true"
-```
-
-Update rule (PUT):
-
-```bash
-curl -X PUT http://127.0.0.1:8000/rule/1 \
-  -H "Content-Type: application/json" \
-  -d '{"rule_type":"range","target_table":"users","target_column":"age","min_value":18,"max_value":99,"is_active":true}'
-```
-
-Activate / deactivate (PATCH):
-
-```bash
-curl -X PATCH http://127.0.0.1:8000/rule/1 \
-  -H "Content-Type: application/json" \
-  -d '{"is_active": false}'
-```
-
-## **Error handling**
-
-The application uses domain exceptions and the controller layer translates them into HTTP responses. Examples:
-
-- `QualityRuleExists` -> HTTP 409 Conflict when trying to create a duplicate rule
-- `QualityRuleNotFound` -> HTTP 404 Not Found when requested rule does not exist
-- `QualityRuleIsDeactivated` / `QualityRuleIsActive` -> HTTP 409 Conflict when activating/deactivating in invalid state
-
-See the exception classes in `src/exceptions/quality_rule_exceptions.py` and how controllers map them in `src/controller/v1/quality_controller.py`.
-
-## **Database & local setup**
-
-- Lightweight SQLite is configured in `src/gateway/sqlite_client.py`.
-- There is a minimal `db/init_db.py` to create tables for local development. Run it before using the app if needed:
-
+### 4. Initialize the Database
+Before running the application for the first time, initialize the SQLite database:
 ```bash
 python db/init_db.py
 ```
 
-## **Testing & next steps**
+## 🚦 Running the Application
 
-Planned improvements to make this repo more shareable for study and collaboration:
+Start the development server with auto-reload:
+```bash
+uvicorn src.app:app --reload
+```
+The API will be available at `http://127.0.0.1:8000`.
 
-- Add unit tests with `pytest` (service + repository unit tests)
-- Pin dependency versions in `requirements.txt` for reproducible installs
-- Add CI (GitHub Actions) that runs tests and linters
-- Improve dependency injection and make services easier to mock (use `fastapi.Depends` consistently or add a DI container)
+### API Documentation
+Access the interactive Swagger UI at: `http://127.0.0.1:8000/docs`
+
+## 📖 Usage Guide
+
+### Rule Data Model
+
+A Quality Rule consists of the following fields:
+- `rule_type`: Type of rule (`unicity`, `precision`, `validity`, `completeness`).
+- `target_table`: The table name the rule applies to.
+- `target_column`: The specific column in the table.
+- `min_value` / `max_value`: Numeric bounds (required for `precision` if `enum_value` is not provided).
+- `enum_value`: List of allowed values (required for `precision` if `min/max` are not provided).
+- `regex_expr`: Regular expression (required for `validity`).
+- `is_active`: Boolean flag for soft deletion.
+
+### Example API Calls
+
+#### Create a Rule (Precision with Range)
+```bash
+curl -X 'POST' \
+  'http://127.0.0.1:8000/api/v1/rule' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "rule_type": "precision",
+  "target_table": "orders",
+  "target_column": "amount",
+  "min_value": 0,
+  "max_value": 10000
+}'
+```
+
+#### Create a Rule (Validity with Regex)
+```bash
+curl -X 'POST' \
+  'http://127.0.0.1:8000/api/v1/rule' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "rule_type": "validity",
+  "target_table": "users",
+  "target_column": "email",
+  "regex_expr": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+}'
+```
+
+#### Get Rules by Table
+```bash
+curl 'http://127.0.0.1:8000/api/v1/rule/table/orders?is_active=true'
+```
+
+#### Deactivate a Rule (Soft Delete)
+```bash
+curl -X 'PATCH' \
+  'http://127.0.0.1:8000/api/v1/rule/1' \
+  -H 'Content-Type: application/json' \
+  -d '{"is_active": false}'
+```
+
+## 📂 Project Structure
+
+```text
+DataConduit-API/
+├── db/                 # Database initialization and storage
+├── infra/              # Infrastructure-related configs
+├── src/
+│   ├── config/         # DI Container and app configuration
+│   ├── controller/     # API Endpoints (v1)
+│   ├── exceptions/     # Custom domain and repo exceptions
+│   ├── gateway/        # DB Clients
+│   ├── model/          # SQLAlchemy Models
+│   ├── repository/     # Data access layer (Interfaces + Impl)
+│   ├── schema/         # Pydantic Schemas
+│   ├── service/        # Business logic layer (Interfaces + Impl)
+│   └── app.py          # Application entry point
+└── test/               # Test suites (Scenario-based)
+```
+
+## 🧪 Testing
+
+The project uses a BDD approach for scenario definitions.
+- Feature files are located in `test/scenario/`.
+- Future improvements include implementing step definitions and unit tests for services and repositories.
+
+## 🤝 Contributing
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
